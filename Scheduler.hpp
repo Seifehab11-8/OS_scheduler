@@ -8,7 +8,7 @@ class Scheduler {
     std::list<Process> gantt_chart_process;
     public:
     virtual void setProcess(Process &process) = 0;
-    virtual std::list<Process>& schedule() = 0;
+    virtual std::list<Process> schedule() = 0;
     Scheduler(std::list<Process>&process);
     Scheduler();
 };
