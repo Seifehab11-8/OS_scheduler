@@ -7,6 +7,7 @@ SJFNonPreemptive::SJFNonPreemptive() {};
 int SJFNonPreemptive::schedule()
 {
     int id;
+    bool first_time = true;
     // as we work non premptive only search of new running of process if there is no
     if (running_id == 0)
     {
@@ -15,7 +16,7 @@ int SJFNonPreemptive::schedule()
         if (a.getArrival_time() > current_time || a.getBurst_time()==a.getExecution_time()) return false;
         if (b.getArrival_time() > current_time || b.getBurst_time()==b.getExecution_time()) return true;  
         return a.getBurst_time() < b.getBurst_time(); });
-        if (running_process != process_queue.end())
+        if (running_process != process_queue.end() && running_process->getExecution_time() < running_process->getBurst_time() && running_process->getArrival_time() <= current_time)
         {
             running_id = running_process->getID();
         }
