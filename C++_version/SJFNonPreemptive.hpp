@@ -12,4 +12,4 @@ public:
     int schedule() override;
 };
 
-#endif // SJFNONPREEMPTIVE_HPP
+#endif
