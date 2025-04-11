@@ -10,7 +10,7 @@ bool Scheduler::finished()
 {
     return std::all_of(process_queue.begin(), process_queue.end(), [](const Process &a)
                        {
-                           return a.getBurst_time() == a.getExecution_time(); // All processes must have burst_time == 0
+                           return a.getBurst_time() == a.getExecution_time(); // All processes must have burst_time == execution time of process to be finished
                        });
 }
 void Scheduler::printProcesses()
