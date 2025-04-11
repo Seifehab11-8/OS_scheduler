@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<?import java.net.URL?>
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.2"
+            fx:controller="org.example.cpuschedular.secondController"
+            style="-fx-background-color: #1e1e2f;">
+    <VBox spacing="20" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="20"
+          AnchorPane.rightAnchor="20" AnchorPane.bottomAnchor="20">
+        <!-- Gantt Chart Section -->
+        <Label text="Gantt Chart" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Label fx:id="ganttChartLabel" text="Gantt Chart will be drawn here"
+               style="-fx-font-size: 16px; -fx-text-fill: white; -fx-background-color: #2a2a3a; -fx-padding: 10; -fx-border-color: #3a3a4a; -fx-border-radius: 5;"/>
+
+        <!-- Process Management Section -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Add New Process:" style="-fx-font-size: 16px; -fx-text-fill: white;"/>
+            <TextField fx:id="newProcessField" promptText="Enter burst time" style="-fx-font-size: 14px;"/>
+            <Button fx:id="addProcessButton" text="Add Process"
+                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px;"/>
+        </HBox>
+
+        <!-- Process Table Section -->
+        <Label text="Process Status" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <TableView fx:id="burstTable" prefHeight="200" style="-fx-font-size: 14px;">
+            <columns>
+                <TableColumn fx:id="processColumn" text="Process" style="-fx-font-size: 14px; -fx-text-fill: white;">
+                    <style>
+                        -fx-alignment: CENTER;
+                        -fx-text-fill: white;
+                    </style>
+                </TableColumn>
+                <TableColumn fx:id="remainingBurstColumn" text="Remaining Burst" style="-fx-font-size: 14px;">
+                    <style>
+                        -fx-alignment: CENTER;
+                        -fx-text-fill: white;
+                    </style>
+                </TableColumn>
+            </columns>
+            <style>
+                -fx-background-color: #2a2a3a;
+                -fx-table-cell-border-color: transparent;
+            </style>
+        </TableView>
+
+        <!-- Statistics Section -->
+        <Label text="Performance Metrics" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Label fx:id="statsLabel" text="Average Waiting Time: N/A    Average Turnaround Time: N/A"
+               style="-fx-font-size: 16px; -fx-text-fill: white; -fx-background-color: #2a2a3a; -fx-padding: 10; -fx-border-color: #3a3a4a; -fx-border-radius: 5;"/>
+
+        <!-- Control Buttons -->
+        <HBox spacing="20" alignment="CENTER">
+            <Button fx:id="toggleButton" text="Pause Live Scheduling"
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-pref-width: 200;"/>
+        </HBox>
+    </VBox>
+    <stylesheets>
+        <URL value="@/styles.css" />
+    </stylesheets>
+</AnchorPane>
