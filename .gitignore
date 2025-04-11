@@ -1,0 +1,42 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+
+# VS Code settings
+.vscode/
+
+# C# - Visual Studio
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+
+# Build results
+*.exe
+*.dll
+*.pdb
+
+# C++ - common
+*.o
+*.obj
+*.out
+*.a
+*.lib
+*.exe
+*.gch
+*.pch
+
+# Ignore application binary in C++_version if compiled
+C++_version/*.exe
+
+# Optional: Ignore backup or temporary files
+*~
+*.bak
+*.tmp
+
+# Ignore Git itself
+.git/
