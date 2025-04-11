@@ -9,6 +9,9 @@ Scheduler *SchedulerFactory::createScheduler(const std::string &type, std::vecto
     else if(type == "PriorityPreemptive") {
         return new PriorityPremScheduler(processes);
     }
+    else if (type == "PriorityNonPreemptive") {
+        return new PriorityNonPreemptive(processes);
+    }
     else
     {
         throw std::invalid_argument("Unknown scheduler type: " + type);
