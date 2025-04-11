@@ -15,9 +15,9 @@ bool Scheduler::finished()
 }
 void Scheduler::printProcesses()
 {
-    std::cout << "Processes in SJFNonPreemptive:\n";
+    std::cout << "Processes :\n";
     std::cout << "ID\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n";
-    for (const auto &process : process_queue) // Iterate through the process queue
+    for (const auto &process : process_queue)
     {
         std::cout << process.getID() << "\t"
                   << process.getArrival_time() << "\t\t"
