@@ -12,10 +12,12 @@ import javafx.scene.control.*;
 import javafx.util.Duration;
 
 public class secondController {
+
     @FXML private Label ganttChartLabel;
     @FXML private TableView<ProcessData> burstTable;
     @FXML private TableColumn<ProcessData, String> processColumn;
     @FXML private TableColumn<ProcessData, Integer> remainingBurstColumn;
+    @FXML private TableColumn<ProcessData, Integer> arrivalTimeColumn;
     @FXML private Label statsLabel;
     @FXML private Button toggleButton;
     @FXML private TextField newProcessField;
@@ -27,11 +29,12 @@ public class secondController {
     private volatile boolean liveMode = true;
     private volatile boolean running = true;
     private Thread schedulingThread;
-    private int arrivalcounter =1;
+    private int arrivalCounter =1;
 
     public void initialize() {
         processColumn.setCellValueFactory(cellData -> cellData.getValue().processNameProperty());
         remainingBurstColumn.setCellValueFactory(cellData -> cellData.getValue().remainingBurstProperty().asObject());
+        arrivalTimeColumn.setCellValueFactory(cellData -> cellData.getValue().arrivalTimeProperty().asObject());
         processDataList = FXCollections.observableArrayList();
         burstTable.setItems(processDataList);
     }
@@ -43,7 +46,7 @@ public class secondController {
             for (int i = 0; i < numProcesses; i++) {
                 String processName = "P" + (i + 1);
                 scheduler.addProcess(burstTimes[i],0);
-                processDataList.add(new ProcessData(processName, burstTimes[i]));
+                processDataList.add(new ProcessData(processName, burstTimes[i],0));
             }
         }
         startSchedulingThread();
@@ -120,8 +123,8 @@ public class secondController {
 
             synchronized (lock) {
                 String processName = "P" + (processDataList.size() + 1);
-                processDataList.add(new ProcessData(processName, burstTime));
-                scheduler.addProcess(burstTime,arrivalcounter++);
+                processDataList.add(new ProcessData(processName, burstTime, arrivalCounter));
+                scheduler.addProcess(burstTime, arrivalCounter++);
                 newProcessField.clear();
             }
         } catch (NumberFormatException e) {
@@ -191,14 +194,18 @@ public class secondController {
     public static class ProcessData {
         private final StringProperty processName;
         private final IntegerProperty remainingBurst;
+        private final IntegerProperty arrivalTime;
 
-        public ProcessData(String name, int burst) {
+        public ProcessData(String name, int burst, int arrival) {
             this.processName = new SimpleStringProperty(name);
             this.remainingBurst = new SimpleIntegerProperty(burst);
+            this.arrivalTime = new SimpleIntegerProperty(arrival);
+
         }
 
         public StringProperty processNameProperty() { return processName; }
         public IntegerProperty remainingBurstProperty() { return remainingBurst; }
+        public IntegerProperty arrivalTimeProperty() { return arrivalTime; }
         public void setRemainingBurst(int value) { remainingBurst.set(value); }
     }
 }
