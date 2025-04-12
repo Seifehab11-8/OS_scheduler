@@ -1,8 +1,10 @@
 package org.example.cpuschedular;
 
+import java.util.Queue;
+
 public class RoundRobinScheduler implements Scheduler {
     @Override
-    public void schedule(int numProcesses, int[] burstTimes) {
+    public void schedule(int numProcesses, Queue<Integer> burstTimes) {
 
     }
 
@@ -12,7 +14,7 @@ public class RoundRobinScheduler implements Scheduler {
     }
 
     @Override
-    public void addProcess(int burstTime) {
+    public void addProcess(int burstTime,int arrivalTime) {
 
     }
 

@@ -1,11 +1,13 @@
 package org.example.cpuschedular;
 
+import java.util.Queue;
+
 public interface Scheduler {
-    void schedule(int numProcesses, int[] burstTimes);
+    void schedule(int numProcesses, Queue<Integer> burstTimes);
 
     int getRemainingBurst(int i);
 
-    void addProcess(int burstTime);
+    void addProcess(int burstTime , int arrivalTime);
 
     String getGanttChart();
 

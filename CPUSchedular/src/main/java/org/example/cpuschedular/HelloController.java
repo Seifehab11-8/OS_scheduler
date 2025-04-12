@@ -27,13 +27,21 @@ public class HelloController {
     private Button submitButton;
 
     @FXML
+    private void onEnter1(ActionEvent event) {
+        // Move focus from numProcessesField to burstTimesField
+        if (event.getSource() == numProcessesField) {
+            burstTimesField.requestFocus();
+        }
+    }
+
+    @FXML
     private void onSubmitClick(ActionEvent event) {
         try {
             // Get number of processes
             int numProcesses = Integer.parseInt(numProcessesField.getText().trim());
 
             // Parse burst times (assuming comma-separated integers)
-            String[] burstStrings = burstTimesField.getText().trim().split(",");
+            String[] burstStrings = burstTimesField.getText().trim().split(" ");
             int[] burstTimes = new int[burstStrings.length];
             for (int i = 0; i < burstStrings.length; i++) {
                 burstTimes[i] = Integer.parseInt(burstStrings[i].trim());
@@ -42,7 +50,7 @@ public class HelloController {
             // Retrieve the selected algorithm
             String selectedAlgorithm = algorithmChoice.getValue();
             if (selectedAlgorithm == null || selectedAlgorithm.isEmpty()) {
-                System.out.println("Please select an algorithm.");
+                System.err.println("Please select an algorithm.");
                 return;
             }
 
@@ -89,7 +97,7 @@ public class HelloController {
             stage.show();
 
         } catch (NumberFormatException e) {
-            System.out.println("Invalid input! Please check the number of processes and burst times.");
+            System.err.println("Invalid input! Please check the number of processes and burst times.");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -3,123 +3,101 @@ package org.example.cpuschedular;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.util.Duration;
 
 public class secondController {
+    @FXML private Label ganttChartLabel;
+    @FXML private TableView<ProcessData> burstTable;
+    @FXML private TableColumn<ProcessData, String> processColumn;
+    @FXML private TableColumn<ProcessData, Integer> remainingBurstColumn;
+    @FXML private Label statsLabel;
+    @FXML private Button toggleButton;
+    @FXML private TextField newProcessField;
 
-    @FXML
-    private Label ganttChartLabel;
-    @FXML
-    private TableView<ProcessData> burstTable;
-    @FXML
-    private TableColumn<ProcessData, String> processColumn;
-    @FXML
-    private TableColumn<ProcessData, Integer> remainingBurstColumn;
-    @FXML
-    private Label statsLabel;
-    @FXML
-    private Button toggleButton;
-    @FXML
-    private TextField newProcessField;
-    @FXML
-    private Button addProcessButton;
-
+    private final Object lock = new Object(); // For thread synchronization
     private Scheduler scheduler;
-    private int numProcesses;
-    private int[] burstTimes;
     private ObservableList<ProcessData> processDataList;
-
     private Timeline timeline;
-    private boolean liveMode = true;
-    private Thread schedulingThread;
-    private Thread inputThread;
+    private volatile boolean liveMode = true;
     private volatile boolean running = true;
+    private Thread schedulingThread;
+    private int arrivalcounter =1;
 
     public void initialize() {
         processColumn.setCellValueFactory(cellData -> cellData.getValue().processNameProperty());
         remainingBurstColumn.setCellValueFactory(cellData -> cellData.getValue().remainingBurstProperty().asObject());
-
         processDataList = FXCollections.observableArrayList();
         burstTable.setItems(processDataList);
     }
 
     public void initializeScheduler(Scheduler scheduler, int numProcesses, int[] burstTimes) {
         this.scheduler = scheduler;
-        this.numProcesses = numProcesses;
-        this.burstTimes = burstTimes;
 
-        // Initialize process data
-        for (int i = 0; i < numProcesses; i++) {
-            processDataList.add(new ProcessData("P" + (i + 1), burstTimes[i]));
+        synchronized (lock) {
+            for (int i = 0; i < numProcesses; i++) {
+                String processName = "P" + (i + 1);
+                scheduler.addProcess(burstTimes[i],0);
+                processDataList.add(new ProcessData(processName, burstTimes[i]));
+            }
         }
-
-        // Start scheduling thread
         startSchedulingThread();
-
-        // Start input thread
-        startInputThread();
-
-        // Initialize timeline for UI updates
         initializeTimeline();
     }
 
+    /**
+     * Starts the scheduling thread which periodically updates the scheduler.
+     */
     private void startSchedulingThread() {
         schedulingThread = new Thread(() -> {
-            while (running) {
+            while (running && !Thread.currentThread().isInterrupted()) {
                 if (liveMode) {
-                    // Execute one scheduling step
-                    scheduler.schedule(numProcesses, burstTimes);
-
-                    // Update burst times from scheduler
-                    updateProcessData();
+                    synchronized (lock) {
+                        try {
+                            scheduler.schedule(processDataList.size(),null);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        updateProcessData();
+                    }
 
                     try {
-                        Thread.sleep(1000); // Simulate time quantum
+                        Thread.sleep(1000); // 1 second per quantum
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        return;
+                        break;
+                    }
+                } else {
+                    try {
+                        Thread.sleep(100); // Reduced CPU usage when paused
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }
         });
         schedulingThread.setDaemon(true);
+        schedulingThread.setName("Scheduling-Thread");
         schedulingThread.start();
     }
 
-    private void startInputThread() {
-        inputThread = new Thread(() -> {
-            while (running) {
-                // This thread would normally listen for external input
-                // In our case, we'll use the JavaFX input components
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-        });
-        inputThread.setDaemon(true);
-        inputThread.start();
-    }
 
+    /**
+     * Initializes the timeline that updates the UI elements periodically.
+     */
     private void initializeTimeline() {
         timeline = new Timeline(new KeyFrame(Duration.seconds(0.5), event -> {
             Platform.runLater(() -> {
-                // Update Gantt chart
-                ganttChartLabel.setText(scheduler.getGanttChart());
-
-                // Update statistics
-                updateStats(scheduler.getAverageWaitingTime(),
-                        scheduler.getAverageTurnaroundTime());
+                synchronized (lock) {
+                    ganttChartLabel.setText(scheduler.getGanttChart());
+                    updateStats(scheduler.getAverageWaitingTime(), scheduler.getAverageTurnaroundTime());
+                }
             });
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -129,35 +107,52 @@ public class secondController {
     @FXML
     private void toggleLiveMode() {
         liveMode = !liveMode;
-        if (liveMode) {
-            toggleButton.setText("Pause Live Scheduling");
-        } else {
-            toggleButton.setText("Resume Live Scheduling");
-        }
+        Platform.runLater(() ->
+                toggleButton.setText(liveMode ? "Pause Live Scheduling" : "Resume Live Scheduling")
+        );
     }
 
     @FXML
-    private void addNewProcess() {
+    private void addNewProcess(ActionEvent event) {
         try {
             int burstTime = Integer.parseInt(newProcessField.getText());
-            String processName = "P" + (processDataList.size() + 1);
-            processDataList.add(new ProcessData(processName, burstTime));
+            if (burstTime <= 0) throw new NumberFormatException();
 
-            // Update scheduler with new process
-            scheduler.addProcess(burstTime);
-            numProcesses++;
-
-            newProcessField.clear();
+            synchronized (lock) {
+                String processName = "P" + (processDataList.size() + 1);
+                processDataList.add(new ProcessData(processName, burstTime));
+                scheduler.addProcess(burstTime,arrivalcounter++);
+                newProcessField.clear();
+            }
         } catch (NumberFormatException e) {
             showAlert();
         }
     }
 
+    /**
+     * Updates the process table data.
+     * For tick-based schedulers, you might only get an updated remaining burst for the currently running process.
+     * Other algorithms might update all processes, so this loop is kept generic.
+     */
     private void updateProcessData() {
-        for (int i = 0; i < numProcesses; i++) {
-            ProcessData process = processDataList.get(i);
-            process.setRemainingBurst(scheduler.getRemainingBurst(i));
-        }
+        Platform.runLater(() -> {
+            synchronized (lock) {
+                // Get the current running process name from the scheduler.
+                String runningProcess = "";
+                if (scheduler instanceof FCFSScheduler) {
+                    runningProcess = ((FCFSScheduler) scheduler).getCurrentProcessName();
+                }
+
+                // Iterate over the processDataList and update only the row matching the running process.
+                for (ProcessData process : processDataList) {
+                    if (process.processNameProperty().get().equals(runningProcess)) {
+                        // We assume getRemainingBurst(0) corresponds to the current running process.
+                        process.setRemainingBurst(scheduler.getRemainingBurst(0));
+                        break; // Only update one process.
+                    }
+                }
+            }
+        });
     }
 
     private void updateStats(double avgWaitingTime, double avgTurnaroundTime) {
@@ -170,25 +165,29 @@ public class secondController {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Invalid Input");
             alert.setHeaderText(null);
-            alert.setContentText("Please enter a valid burst time (integer)");
+            alert.setContentText("Please enter a positive integer burst time");
             alert.showAndWait();
         });
     }
 
     public void shutdown() {
         running = false;
+
         if (timeline != null) {
             timeline.stop();
         }
+
         if (schedulingThread != null) {
             schedulingThread.interrupt();
         }
-        if (inputThread != null) {
-            inputThread.interrupt();
+
+        try {
+            if (schedulingThread != null) schedulingThread.join(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    // Process data model class
     public static class ProcessData {
         private final StringProperty processName;
         private final IntegerProperty remainingBurst;
@@ -198,13 +197,8 @@ public class secondController {
             this.remainingBurst = new SimpleIntegerProperty(burst);
         }
 
-        // Property getters
         public StringProperty processNameProperty() { return processName; }
         public IntegerProperty remainingBurstProperty() { return remainingBurst; }
-
-        // Value getters and setters
-        public String getProcessName() { return processName.get(); }
-        public int getRemainingBurst() { return remainingBurst.get(); }
         public void setRemainingBurst(int value) { remainingBurst.set(value); }
     }
 }
