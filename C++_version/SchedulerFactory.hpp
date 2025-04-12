@@ -4,6 +4,7 @@
 #include "Scheduler.hpp"
 #include "SJFNonPreemptive.hpp"
 #include "PriorityPremScheduler.hpp"
+#include "RR.hpp"
 #include <string>
 #include <vector>
 
