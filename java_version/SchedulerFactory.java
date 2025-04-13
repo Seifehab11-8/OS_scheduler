@@ -5,6 +5,8 @@ public class SchedulerFactory {
         switch (type) {
             case "SJFNonPreemptive": // Ensure this matches the expected input
                 return new SJFNonPreemptive(processes);
+            case "FCFS": 
+                return new FCFS(processes);
             // Add other scheduler types here
             default:
                 throw new IllegalArgumentException("Unknown scheduler type: " + type);
