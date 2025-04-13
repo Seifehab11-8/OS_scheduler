@@ -1,4 +1,3 @@
-// Removed package declaration to match the default package
 
 import java.util.ArrayList;
 import java.util.List;
