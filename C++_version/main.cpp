@@ -57,7 +57,8 @@ int main()
 
     while (!scheduler->finished())
     {
-        temp_id = scheduler->schedule();
+        int current_id = scheduler->schedule();
+        temp_id = current_id; // Store the process ID before resetting
         if (temp_id == 0)
         {
             middleRow += "    -    |";

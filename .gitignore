@@ -33,6 +33,9 @@ obj/
 # Ignore application binary in C++_version if compiled
 C++_version/*.exe
 
+# Java - compiled files
+java_version/*.class
+
 # Optional: Ignore backup or temporary files
 *~
 *.bak
