@@ -33,7 +33,7 @@ public class Main {
             scheduler = SchedulerFactory.createScheduler(schedulerType, processes);
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
-            System.out.println("Valid scheduler types: SJFNonPreemptive");
+            System.out.println("Valid scheduler types: SJFNonPreemptive, FCFS");
             return;
         }
 
