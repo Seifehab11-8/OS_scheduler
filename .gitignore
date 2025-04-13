@@ -1,12 +1,7 @@
-# General
 .DS_Store
 Thumbs.db
 *.log
-
-# VS Code settings
 .vscode/
-
-# C# - Visual Studio
 bin/
 obj/
 *.user
@@ -14,13 +9,9 @@ obj/
 *.userosscache
 *.sln.docstates
 *.vcxproj.user
-
-# Build results
 *.exe
 *.dll
 *.pdb
-
-# C++ - common
 *.o
 *.obj
 *.out
@@ -29,17 +20,9 @@ obj/
 *.exe
 *.gch
 *.pch
-
-# Ignore application binary in C++_version if compiled
 C++_version/*.exe
-
-# Java - compiled files
 java_version/*.class
-
-# Optional: Ignore backup or temporary files
 *~
 *.bak
 *.tmp
-
-# Ignore Git itself
 .git/
