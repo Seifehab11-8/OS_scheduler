@@ -9,6 +9,9 @@ public class SchedulerFactory {
                 return new FCFS(processes);
             case "PriorityNonPreemptive":
                 return new PriorityNonPreemptive(processes);
+            case "SJFPreemptive":
+                return new SJFPreemptive(processes);
+            // Add other scheduler types here
             // Add other scheduler types here
             default:
                 throw new IllegalArgumentException("Unknown scheduler type: " + type);
