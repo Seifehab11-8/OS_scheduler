@@ -8,61 +8,78 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import java.io.IOException;
+
 
 public class secondController {
 
+    public TextField newPriorityField;
     @FXML private Label ganttChartLabel;
     @FXML private TableView<ProcessData> burstTable;
     @FXML private TableColumn<ProcessData, String> processColumn;
     @FXML private TableColumn<ProcessData, Integer> remainingBurstColumn;
     @FXML private TableColumn<ProcessData, Integer> arrivalTimeColumn;
+    @FXML private TableColumn<ProcessData, Integer> priorityColumn;
     @FXML private Label statsLabel;
     @FXML private Button toggleButton;
     @FXML private TextField newProcessField;
+    @FXML public Button backButton;
 
-    private final Object lock = new Object(); // For thread synchronization
+    private final Object lock = new Object();
     private Scheduler scheduler;
     private ObservableList<ProcessData> processDataList;
     private Timeline timeline;
     private volatile boolean liveMode = true;
     private volatile boolean running = true;
     private Thread schedulingThread;
-    private int arrivalCounter =1;
+    private int arrivalCounter = 1;
 
     public void initialize() {
         processColumn.setCellValueFactory(cellData -> cellData.getValue().processNameProperty());
         remainingBurstColumn.setCellValueFactory(cellData -> cellData.getValue().remainingBurstProperty().asObject());
         arrivalTimeColumn.setCellValueFactory(cellData -> cellData.getValue().arrivalTimeProperty().asObject());
+        priorityColumn.setCellValueFactory(cellData -> cellData.getValue().priorityProperty().asObject());
         processDataList = FXCollections.observableArrayList();
         burstTable.setItems(processDataList);
     }
 
-    public void initializeScheduler(Scheduler scheduler, int numProcesses, int[] burstTimes) {
+    public void initializeScheduler(Scheduler scheduler, int numProcesses, int[] burstTimes, int[] priorities) {
         this.scheduler = scheduler;
 
         synchronized (lock) {
             for (int i = 0; i < numProcesses; i++) {
                 String processName = "P" + (i + 1);
-                scheduler.addProcess(burstTimes[i],0);
-                processDataList.add(new ProcessData(processName, burstTimes[i],0));
+                if (scheduler instanceof PriorityNonPreemptiveScheduler) {
+                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], 0, priorities[i]);
+                } else if (scheduler instanceof PriorityPreemptiveScheduler) {
+                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], 0, priorities[i]);
+                } else {
+                    scheduler.addProcess(burstTimes[i], 0);
+                }
+
+                ProcessData process = new ProcessData(processName, burstTimes[i], 0);
+                process.setPriority(priorities[i]);
+                processDataList.add(process);
             }
         }
         startSchedulingThread();
         initializeTimeline();
     }
 
-    /**
-     * Starts the scheduling thread which periodically updates the scheduler.
-     */
     private void startSchedulingThread() {
         schedulingThread = new Thread(() -> {
             while (running && !Thread.currentThread().isInterrupted()) {
                 if (liveMode) {
                     synchronized (lock) {
                         try {
-                            scheduler.schedule(processDataList.size(),null);
+                            scheduler.schedule(processDataList.size(), null);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -70,14 +87,14 @@ public class secondController {
                     }
 
                     try {
-                        Thread.sleep(1000); // 1 second per quantum
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
                     }
                 } else {
                     try {
-                        Thread.sleep(100); // Reduced CPU usage when paused
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
@@ -90,10 +107,6 @@ public class secondController {
         schedulingThread.start();
     }
 
-
-    /**
-     * Initializes the timeline that updates the UI elements periodically.
-     */
     private void initializeTimeline() {
         timeline = new Timeline(new KeyFrame(Duration.seconds(0.5), event -> {
             Platform.runLater(() -> {
@@ -116,42 +129,47 @@ public class secondController {
     }
 
     @FXML
-    private void addNewProcess(ActionEvent event) {
+    private void addNewProcess() {
         try {
             int burstTime = Integer.parseInt(newProcessField.getText());
+            int priority;
             if (burstTime <= 0) throw new NumberFormatException();
-
+            if(scheduler instanceof PriorityPreemptiveScheduler || scheduler instanceof  PriorityNonPreemptiveScheduler){
+                 priority = Integer.parseInt(newPriorityField.getText());
+                    if (priority < 0) throw new NumberFormatException();
+            }
+            else
+                priority =0;
             synchronized (lock) {
                 String processName = "P" + (processDataList.size() + 1);
-                processDataList.add(new ProcessData(processName, burstTime, arrivalCounter));
-                scheduler.addProcess(burstTime, arrivalCounter++);
+                ProcessData process = new ProcessData(processName, burstTime, arrivalCounter);
+                process.setPriority(priority);
+                processDataList.add(process);
+
+                if (scheduler instanceof PriorityNonPreemptiveScheduler) {
+                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter++, priority);
+                } else if (scheduler instanceof PriorityPreemptiveScheduler) {
+                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter++, priority);
+                } else {
+                    scheduler.addProcess(burstTime, arrivalCounter++);
+                }
+
                 newProcessField.clear();
+                newPriorityField.clear();
             }
         } catch (NumberFormatException e) {
             showAlert();
         }
     }
 
-    /**
-     * Updates the process table data.
-     * For tick-based schedulers, you might only get an updated remaining burst for the currently running process.
-     * Other algorithms might update all processes, so this loop is kept generic.
-     */
     private void updateProcessData() {
         Platform.runLater(() -> {
             synchronized (lock) {
-                // Get the current running process name from the scheduler.
-                String runningProcess = "";
-                if (scheduler instanceof FCFSScheduler) {
-                    runningProcess = ((FCFSScheduler) scheduler).getCurrentProcessName();
-                }
-
-                // Iterate over the processDataList and update only the row matching the running process.
+                String runningProcess = scheduler.getCurrentProcessName();
                 for (ProcessData process : processDataList) {
                     if (process.processNameProperty().get().equals(runningProcess)) {
-                        // We assume getRemainingBurst(0) corresponds to the current running process.
                         process.setRemainingBurst(scheduler.getRemainingBurst(0));
-                        break; // Only update one process.
+                        break;
                     }
                 }
             }
@@ -168,7 +186,7 @@ public class secondController {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Invalid Input");
             alert.setHeaderText(null);
-            alert.setContentText("Please enter a positive integer burst time");
+            alert.setContentText("Please enter a valid burst time and priority (positive integers)");
             alert.showAndWait();
         });
     }
@@ -190,22 +208,45 @@ public class secondController {
             Thread.currentThread().interrupt();
         }
     }
+    @FXML
+    private void ReturnToMainScene() {
+        try {
+            // Load the main view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/cpuschedular/hello-view.fxml"));
+            Parent root = loader.load();
+
+            // Get the current stage
+            Stage stage = (Stage) backButton.getScene().getWindow();
+            stage.setWidth(stage.getWidth());
+            stage.setHeight(stage.getWidth());
+            // Set the new scene
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static class ProcessData {
         private final StringProperty processName;
         private final IntegerProperty remainingBurst;
         private final IntegerProperty arrivalTime;
+        private final IntegerProperty priorityValue;
 
         public ProcessData(String name, int burst, int arrival) {
             this.processName = new SimpleStringProperty(name);
             this.remainingBurst = new SimpleIntegerProperty(burst);
             this.arrivalTime = new SimpleIntegerProperty(arrival);
-
+            this.priorityValue = new SimpleIntegerProperty();
         }
 
         public StringProperty processNameProperty() { return processName; }
         public IntegerProperty remainingBurstProperty() { return remainingBurst; }
         public IntegerProperty arrivalTimeProperty() { return arrivalTime; }
+        public IntegerProperty priorityProperty() { return priorityValue; }
+
         public void setRemainingBurst(int value) { remainingBurst.set(value); }
+        public void setPriority(int value) { priorityValue.set(value); }
     }
 }

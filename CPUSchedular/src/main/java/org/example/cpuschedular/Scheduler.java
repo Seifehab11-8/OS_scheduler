@@ -14,4 +14,5 @@ public interface Scheduler {
     double getAverageWaitingTime();
 
     double getAverageTurnaroundTime();
+    String getCurrentProcessName();
 }

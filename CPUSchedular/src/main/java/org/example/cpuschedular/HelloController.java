@@ -1,18 +1,25 @@
 package org.example.cpuschedular;
 
+
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class HelloController {
+
+    public TextField RRQuantum;
+    public TextField Priority;
 
     @FXML
     private TextField numProcessesField;
@@ -28,33 +35,28 @@ public class HelloController {
 
     @FXML
     private void onEnter1(ActionEvent event) {
-        // Move focus from numProcessesField to burstTimesField
         if (event.getSource() == numProcessesField) {
             burstTimesField.requestFocus();
         }
     }
 
     @FXML
-    private void onSubmitClick(ActionEvent event) {
+    private void onSubmitClick() {
         try {
-            // Get number of processes
             int numProcesses = Integer.parseInt(numProcessesField.getText().trim());
+            String selectedAlgorithm = algorithmChoice.getValue();
 
-            // Parse burst times (assuming comma-separated integers)
             String[] burstStrings = burstTimesField.getText().trim().split(" ");
             int[] burstTimes = new int[burstStrings.length];
             for (int i = 0; i < burstStrings.length; i++) {
                 burstTimes[i] = Integer.parseInt(burstStrings[i].trim());
             }
 
-            // Retrieve the selected algorithm
-            String selectedAlgorithm = algorithmChoice.getValue();
             if (selectedAlgorithm == null || selectedAlgorithm.isEmpty()) {
                 System.err.println("Please select an algorithm.");
                 return;
             }
 
-            // Instantiate the scheduler based on selection
             Scheduler scheduler;
             switch (selectedAlgorithm) {
                 case "FCFS":
@@ -66,34 +68,54 @@ public class HelloController {
                 case "SJF (Non Preemptive)":
                     scheduler = new SJFNonPreemptiveScheduler();
                     break;
-                case " Priority (Preemptive)":
                 case "Priority (Preemptive)":
                     scheduler = new PriorityPreemptiveScheduler();
                     break;
-                case " Priority (NOn Preemptive)":
-                case "Priority (NOn Preemptive)":
+                case "Priority (Non Preemptive)":
                     scheduler = new PriorityNonPreemptiveScheduler();
                     break;
                 case "Round Robin":
-                    scheduler = new RoundRobinScheduler();
+                    try {
+                        scheduler = new RoundRobinScheduler(Integer.parseInt(RRQuantum.getText().trim()));
+                    } catch (NumberFormatException e) {
+                        showAlert();
+                        RRQuantum.clear();
+                        return;
+                    }
                     break;
                 default:
                     System.out.println("Unknown algorithm selected.");
                     return;
             }
 
-            // Optionally, you might call scheduler.schedule() to pre-calculate metrics etc.
-            // Now, switch to the chart view scene and pass the necessary data
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/cpuschedular/second-view.fxml"));
             Parent chartRoot = loader.load();
-
-            // Get the ChartController to pass data
             secondController chartController = loader.getController();
-            chartController.initializeScheduler(scheduler, numProcesses, burstTimes);
+
+            // Prepare priorities
+            int[] priorities;
+            if (Objects.equals(selectedAlgorithm, "Priority (Preemptive)") ||
+                    Objects.equals(selectedAlgorithm, "Priority (Non Preemptive)")) {
+
+                String[] priorityStrings = Priority.getText().trim().split(" ");
+                priorities = new int[priorityStrings.length];
+                for (int i = 0; i < priorityStrings.length; i++) {
+                    priorities[i] = Integer.parseInt(priorityStrings[i].trim());
+                }
+            } else {
+                priorities = new int[burstTimes.length]; // default to 0 if not using priority
+                for (int i = 0; i < burstTimes.length; i++) {
+                    priorities[i] = 0;
+                }
+            }
+
+            chartController.initializeScheduler(scheduler, numProcesses, burstTimes, priorities);
 
             // Switch scene
             Stage stage = (Stage) submitButton.getScene().getWindow();
-            stage.setScene(new Scene(chartRoot));
+            double width = submitButton.getScene().getWidth();
+            double height = submitButton.getScene().getHeight();
+            stage.setScene(new Scene(chartRoot, width, height));
             stage.show();
 
         } catch (NumberFormatException e) {
@@ -101,5 +123,21 @@ public class HelloController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void onEnter2(ActionEvent event) {
+        if (event.getSource() == RRQuantum) {
+            submitButton.fire();
+        }
+    }
+
+    private void showAlert() {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Invalid Input");
+            alert.setHeaderText(null);
+            alert.setContentText("Please enter a positive integer quantum time");
+            alert.showAndWait();
+        });
     }
 }
