@@ -11,6 +11,9 @@ public class SchedulerFactory {
                 return new PriorityNonPreemptive(processes);
             case "SJFPreemptive":
                 return new SJFPreemptive(processes);
+	    case "RoundRobin":
+                return new RoundRobinScheduler(processes , 2);	//Qauntum is fixed = 2 
+
             // Add other scheduler types here
             // Add other scheduler types here
             default:
