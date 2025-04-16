@@ -6,7 +6,6 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,9 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.io.IOException;
-
 
 public class secondController {
 
@@ -39,7 +36,7 @@ public class secondController {
     private volatile boolean liveMode = true;
     private volatile boolean running = true;
     private Thread schedulingThread;
-    private int arrivalCounter = 1;
+    private int arrivalCounter = 0;
 
     public void initialize() {
         processColumn.setCellValueFactory(cellData -> cellData.getValue().processNameProperty());
@@ -50,21 +47,21 @@ public class secondController {
         burstTable.setItems(processDataList);
     }
 
-    public void initializeScheduler(Scheduler scheduler, int numProcesses, int[] burstTimes, int[] priorities) {
+    public void initializeScheduler(Scheduler scheduler, int numProcesses, int[] burstTimes, int[] priorities,int[] arrivalTimes) {
         this.scheduler = scheduler;
 
         synchronized (lock) {
             for (int i = 0; i < numProcesses; i++) {
                 String processName = "P" + (i + 1);
                 if (scheduler instanceof PriorityNonPreemptiveScheduler) {
-                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], 0, priorities[i]);
+                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], arrivalTimes[i], priorities[i]);
                 } else if (scheduler instanceof PriorityPreemptiveScheduler) {
-                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], 0, priorities[i]);
+                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTimes[i], arrivalTimes[i], priorities[i]);
                 } else {
-                    scheduler.addProcess(burstTimes[i], 0);
+                    scheduler.addProcess(burstTimes[i], arrivalTimes[i]);
                 }
 
-                ProcessData process = new ProcessData(processName, burstTimes[i], 0);
+                ProcessData process = new ProcessData(processName, burstTimes[i], arrivalTimes[i]);
                 process.setPriority(priorities[i]);
                 processDataList.add(process);
             }
@@ -80,6 +77,7 @@ public class secondController {
                     synchronized (lock) {
                         try {
                             scheduler.schedule(processDataList.size(), null);
+                            arrivalCounter++;
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -147,11 +145,11 @@ public class secondController {
                 processDataList.add(process);
 
                 if (scheduler instanceof PriorityNonPreemptiveScheduler) {
-                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter++, priority);
+                    ((PriorityNonPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter, priority);
                 } else if (scheduler instanceof PriorityPreemptiveScheduler) {
-                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter++, priority);
+                    ((PriorityPreemptiveScheduler) scheduler).addProcessWithPriority(burstTime, arrivalCounter, priority);
                 } else {
-                    scheduler.addProcess(burstTime, arrivalCounter++);
+                    scheduler.addProcess(burstTime, arrivalCounter);
                 }
 
                 newProcessField.clear();
