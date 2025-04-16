@@ -33,8 +33,11 @@
       <Label text="Burst Times (space-separated):" textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="1" />
       <TextField fx:id="burstTimesField" promptText="e.g., 5 8 3" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-      <Label text="Choose Algorithm:" textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-      <ComboBox fx:id="algorithmChoice" promptText="Select" GridPane.columnIndex="1" GridPane.rowIndex="2">
+      <Label text="ArrivalTimes (Space-separated):"  textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+      <TextField fx:id="ArrivalTimefield" prefHeight="25.0" prefWidth="291.0" promptText="e.g., 3 4 1 6" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+      <Label text="Choose Algorithm:" textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+      <ComboBox fx:id="algorithmChoice" promptText="Select" GridPane.columnIndex="1" GridPane.rowIndex="3">
          <items>
             <FXCollections fx:factory="observableArrayList">
                <String fx:value="FCFS" />
@@ -46,10 +49,12 @@
             </FXCollections>
          </items>
       </ComboBox>
-      <Label text="Quantum Time For RR:"  textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-      <TextField fx:id="RRQuantum" onAction="#onEnter2" prefHeight="25.0" prefWidth="291.0" promptText="e.g., 3" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-      <Label text="Priorities (Space-separated):"  textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-      <TextField fx:id="Priority" prefHeight="25.0" prefWidth="291.0" promptText="e.g., 3 4 1 6" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <Label text="Quantum Time For RR:"  textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+      <TextField fx:id="RRQuantum" onAction="#onEnter2" prefHeight="25.0" prefWidth="291.0" promptText="e.g., 3" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <Label text="Priorities (Space-separated):"  textFill="white" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+      <TextField fx:id="Priority" prefHeight="25.0" prefWidth="291.0" promptText="e.g., 3 4 1 6" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+
    </GridPane>
 
          <!-- Button at the bottom (fixed) -->
