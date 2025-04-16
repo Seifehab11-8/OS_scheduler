@@ -20,6 +20,7 @@ public class HelloController {
 
     public TextField RRQuantum;
     public TextField Priority;
+    public TextField ArrivalTimefield;
 
     @FXML
     private TextField numProcessesField;
@@ -45,16 +46,31 @@ public class HelloController {
         try {
             int numProcesses = Integer.parseInt(numProcessesField.getText().trim());
             String selectedAlgorithm = algorithmChoice.getValue();
+            String burstText = burstTimesField.getText().trim();
+            String arrivalText = ArrivalTimefield.getText().trim();
+            String[] burstStrings = burstText.split("\\s+");
+            String[] arrivalStrings = arrivalText.isEmpty() ? new String[0] : arrivalText.split("\\s+");
 
-            String[] burstStrings = burstTimesField.getText().trim().split(" ");
             int[] burstTimes = new int[burstStrings.length];
+            int[] arrivalTimes = new int[burstStrings.length];
+
             for (int i = 0; i < burstStrings.length; i++) {
                 burstTimes[i] = Integer.parseInt(burstStrings[i].trim());
             }
 
-            if (selectedAlgorithm == null || selectedAlgorithm.isEmpty()) {
-                System.err.println("Please select an algorithm.");
-                return;
+            if (arrivalStrings.length > 0) {
+                for (int i = 0; i < burstStrings.length; i++) {
+                    // If there is a corresponding arrival time, parse it; otherwise, set to 0.
+                    if (i < arrivalStrings.length) {
+                        arrivalTimes[i] = Integer.parseInt(arrivalStrings[i].trim());
+                    } else {
+                        arrivalTimes[i] = 0;
+                    }
+                }
+            } else {
+                for (int i = 0; i < burstStrings.length; i++) {
+                    arrivalTimes[i] = 0;
+                }
             }
 
             Scheduler scheduler;
@@ -109,7 +125,7 @@ public class HelloController {
                 }
             }
 
-            chartController.initializeScheduler(scheduler, numProcesses, burstTimes, priorities);
+            chartController.initializeScheduler(scheduler, burstStrings.length, burstTimes, priorities,arrivalTimes);
 
             // Switch scene
             Stage stage = (Stage) submitButton.getScene().getWindow();
