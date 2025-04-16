@@ -9,6 +9,8 @@ public class SchedulerFactory {
                 return new FCFS(processes);
             case "PriorityNonPreemptive":
                 return new PriorityNonPreemptive(processes);
+            case "PriorityPreemptive":
+                return new PriorityPreemptive(processes);
             case "SJFPreemptive":
                 return new SJFPreemptive(processes);
 	    case "RoundRobin":

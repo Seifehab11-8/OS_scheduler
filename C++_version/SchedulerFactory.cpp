@@ -1,4 +1,5 @@
 #include "SchedulerFactory.hpp"
+#include "PriorityNonPreemptive.hpp" // Ensure this header is included
 
 Scheduler *SchedulerFactory::createScheduler(const std::string &type, std::vector<Process> &processes)
 {
