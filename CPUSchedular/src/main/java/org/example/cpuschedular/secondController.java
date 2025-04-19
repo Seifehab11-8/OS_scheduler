@@ -146,6 +146,7 @@ public class secondController {
                 String processName = "P" + (processDataList.size() + 1);
                 ProcessData process = new ProcessData(processName, burstTime, arrivalCounter);
                 process.setPriority(priority);
+                process.setBurst(burstTime);
                 processDataList.add(process);
 
                 if (scheduler instanceof PriorityNonPreemptiveScheduler) {
