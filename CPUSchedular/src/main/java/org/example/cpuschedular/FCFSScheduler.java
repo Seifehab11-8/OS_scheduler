@@ -3,7 +3,7 @@ package org.example.cpuschedular;
 import java.util.*;
 
 public class FCFSScheduler implements Scheduler {
-    private final Map<String, Integer> arrivalTimes = new HashMap<>();
+    private final Map<String, Integer> arrivalTimes = new LinkedHashMap<>();
     private final Map<String, Integer> burstTimeMap = new HashMap<>();
     private final Map<String, Integer> completionTimes = new HashMap<>();
     private final Map<String, Integer> turnaroundTimes = new HashMap<>();
@@ -12,8 +12,9 @@ public class FCFSScheduler implements Scheduler {
     private final Map<String, Integer> pendingArrivalTimes = new HashMap<>();
 
     private int currentTime = 0;
-    private String currentProcessName = null;
-    private int currentProcessBurstRemaining = 0;
+    private String currentProcess = null;
+    private int remainingBurst = 0;
+    private boolean justCompleted = false;  // retain finished process for one tick
 
     private final StringBuilder ganttChart = new StringBuilder();
     private double avgWaitingTime = 0;
@@ -21,80 +22,75 @@ public class FCFSScheduler implements Scheduler {
 
     @Override
     public synchronized void addProcess(int burstTime, int arrivalTime) {
-        String processName = "P" + (arrivalTimes.size() + 1);
-        arrivalTimes.put(processName, arrivalTime);
-        burstTimeMap.put(processName, burstTime);
-        pendingArrivalTimes.put(processName, arrivalTime);
+        String name = "P" + (arrivalTimes.size() + 1);
+        arrivalTimes.put(name, arrivalTime);
+        burstTimeMap.put(name, burstTime);
+        pendingArrivalTimes.put(name, arrivalTime);
     }
 
     @Override
     public synchronized void schedule(int numProcesses, Queue<Integer> unused) {
-        // Step 1: Move arrived processes to the ready queue
-        List<String> justArrived = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : pendingArrivalTimes.entrySet()) {
+        // 1. Move arrivals into ready queue
+        Iterator<Map.Entry<String, Integer>> it = pendingArrivalTimes.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Integer> entry = it.next();
             if (entry.getValue() <= currentTime) {
                 readyQueue.add(entry.getKey());
-                justArrived.add(entry.getKey());
-            }
-        }
-        for (String name : justArrived) {
-            pendingArrivalTimes.remove(name);
-        }
-
-        //  Step 2: Run current process
-        if (currentProcessName != null) {
-            currentProcessBurstRemaining--;
-
-            if (currentProcessBurstRemaining == 0) {
-                int completionTime = currentTime + 1;
-                completionTimes.put(currentProcessName, completionTime);
-
-                int arrival = arrivalTimes.get(currentProcessName);
-                int burst = burstTimeMap.get(currentProcessName);
-                int turnaround = completionTime - arrival;
-                int waiting = turnaround - burst;
-
-                turnaroundTimes.put(currentProcessName, turnaround);
-                waitingTimes.put(currentProcessName, waiting);
-
-                int count = waitingTimes.size();
-                int totalWaiting = 0, totalTurnaround = 0;
-                for (String p : waitingTimes.keySet()) {
-                    totalWaiting += waitingTimes.get(p);
-                    totalTurnaround += turnaroundTimes.get(p);
-                }
-
-                avgWaitingTime = (double) totalWaiting / count;
-                avgTurnaroundTime = (double) totalTurnaround / count;
-
-                currentProcessName = null; // 🔥 don’t start next process in same tick
+                it.remove();
             }
         }
 
-        //  Step 3: If no process running, pick next from ready queue
-        if (currentProcessName == null && !readyQueue.isEmpty()) {
-            currentProcessName = readyQueue.poll();
-            currentProcessBurstRemaining = burstTimeMap.get(currentProcessName);
+        // 2. If a process just finished last tick, clear it now so next pick can run
+        if (justCompleted) {
+            currentProcess = null;
+            justCompleted = false;
         }
 
-        //  Step 4: Log to Gantt chart
-        if (currentProcessName == null) {
+        // 3. If CPU is free, pick next FCFS process
+        if (currentProcess == null && !readyQueue.isEmpty()) {
+            currentProcess = readyQueue.poll();
+            remainingBurst = burstTimeMap.get(currentProcess);
+        }
+
+        // 4. Log to Gantt and actually run one unit
+        if (currentProcess == null) {
             ganttChart.append("| idle ");
         } else {
-            ganttChart.append("| ").append(currentProcessName).append(" ");
+            ganttChart.append("| ").append(currentProcess).append(" ");
+            remainingBurst--;
+            if (remainingBurst == 0) {
+                // Record completion
+                int completionTime = currentTime + 1;
+                completionTimes.put(currentProcess, completionTime);
+
+                int arrival = arrivalTimes.get(currentProcess);
+                int burst = burstTimeMap.get(currentProcess);
+                int turnaround = completionTime - arrival;
+                int waiting = turnaround - burst;
+                turnaroundTimes.put(currentProcess, turnaround);
+                waitingTimes.put(currentProcess, waiting);
+
+                // Recompute averages
+                avgWaitingTime = waitingTimes.values().stream().mapToInt(Integer::intValue).average().orElse(0);
+                avgTurnaroundTime = turnaroundTimes.values().stream().mapToInt(Integer::intValue).average().orElse(0);
+
+                // Keep this process alive for one more tick so UI sees remainingBurst == 0
+                justCompleted = true;
+            }
         }
 
+        // 5. Advance the clock
         currentTime++;
     }
 
     @Override
     public synchronized String getCurrentProcessName() {
-        return currentProcessName;
+        return currentProcess;
     }
 
     @Override
     public synchronized int getRemainingBurst(int unused) {
-        return currentProcessBurstRemaining-1;
+        return remainingBurst;
     }
 
     @Override
