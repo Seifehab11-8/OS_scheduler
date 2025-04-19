@@ -24,6 +24,7 @@ public class secondController {
     @FXML private TableColumn<ProcessData, Integer> remainingBurstColumn;
     @FXML private TableColumn<ProcessData, Integer> arrivalTimeColumn;
     @FXML private TableColumn<ProcessData, Integer> priorityColumn;
+    @FXML private TableColumn<ProcessData, Integer> BurstColumn;
     @FXML private Label statsLabel;
     @FXML private Button toggleButton;
     @FXML private TextField newProcessField;
@@ -43,6 +44,7 @@ public class secondController {
         remainingBurstColumn.setCellValueFactory(cellData -> cellData.getValue().remainingBurstProperty().asObject());
         arrivalTimeColumn.setCellValueFactory(cellData -> cellData.getValue().arrivalTimeProperty().asObject());
         priorityColumn.setCellValueFactory(cellData -> cellData.getValue().priorityProperty().asObject());
+        BurstColumn.setCellValueFactory(cellData -> cellData.getValue().burstProperty().asObject());
         processDataList = FXCollections.observableArrayList();
         burstTable.setItems(processDataList);
     }
@@ -63,6 +65,7 @@ public class secondController {
 
                 ProcessData process = new ProcessData(processName, burstTimes[i], arrivalTimes[i]);
                 process.setPriority(priorities[i]);
+                process.setBurst(burstTimes[i]);
                 processDataList.add(process);
             }
         }
@@ -106,9 +109,10 @@ public class secondController {
     }
 
     private void initializeTimeline() {
-        timeline = new Timeline(new KeyFrame(Duration.seconds(0.5), event -> {
+        timeline = new Timeline(new KeyFrame(Duration.seconds(0.5), _ -> {
             Platform.runLater(() -> {
                 synchronized (lock) {
+
                     ganttChartLabel.setText(scheduler.getGanttChart());
                     updateStats(scheduler.getAverageWaitingTime(), scheduler.getAverageTurnaroundTime());
                 }
@@ -167,8 +171,10 @@ public class secondController {
                 for (ProcessData process : processDataList) {
                     if (process.processNameProperty().get().equals(runningProcess)) {
                         process.setRemainingBurst(scheduler.getRemainingBurst(0));
+                        System.out.println(scheduler.getRemainingBurst(0));
                         break;
                     }
+
                 }
             }
         });
@@ -231,20 +237,24 @@ public class secondController {
         private final IntegerProperty remainingBurst;
         private final IntegerProperty arrivalTime;
         private final IntegerProperty priorityValue;
+        private final IntegerProperty burstValue;
 
         public ProcessData(String name, int burst, int arrival) {
             this.processName = new SimpleStringProperty(name);
             this.remainingBurst = new SimpleIntegerProperty(burst);
             this.arrivalTime = new SimpleIntegerProperty(arrival);
             this.priorityValue = new SimpleIntegerProperty();
+            this.burstValue = new SimpleIntegerProperty();
         }
 
         public StringProperty processNameProperty() { return processName; }
         public IntegerProperty remainingBurstProperty() { return remainingBurst; }
         public IntegerProperty arrivalTimeProperty() { return arrivalTime; }
         public IntegerProperty priorityProperty() { return priorityValue; }
+        public IntegerProperty burstProperty() { return burstValue; }
 
         public void setRemainingBurst(int value) { remainingBurst.set(value); }
         public void setPriority(int value) { priorityValue.set(value); }
+        public void setBurst(int value) { burstValue.set(value); }
     }
 }

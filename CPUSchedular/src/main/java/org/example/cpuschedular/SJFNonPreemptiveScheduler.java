@@ -55,6 +55,7 @@ public class SJFNonPreemptiveScheduler implements Scheduler {
 
                 updateAverages();
             } else {
+                ganttChart.append("| idle ");
                 currentProcess = null;
             }
         }

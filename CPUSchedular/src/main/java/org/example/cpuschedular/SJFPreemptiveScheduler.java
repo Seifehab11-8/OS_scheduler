@@ -67,7 +67,7 @@ public class SJFPreemptiveScheduler implements Scheduler {
         // Completion
         if (remainingBurstTimes.get(currentProcess) == 0) {
             completionTimes.put(currentProcess, currentTime);
-            int turnaround = currentTime - arrivalTimes.get(currentProcess);
+            int turnaround = completionTimes.get(currentProcess) - arrivalTimes.get(currentProcess);
             turnaroundTimes.put(currentProcess, turnaround);
             int waiting = turnaround - burstTimeMap.get(currentProcess);
             waitingTimes.put(currentProcess, waiting);

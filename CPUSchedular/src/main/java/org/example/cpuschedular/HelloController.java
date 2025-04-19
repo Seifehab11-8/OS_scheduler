@@ -150,6 +150,7 @@ public class HelloController {
     @FXML
     public void onEnter3(ActionEvent event) {
         if (event.getSource() == ArrivalTimefield) {
+            algorithmChoice.show();
             algorithmChoice.requestFocus();
         }
     }

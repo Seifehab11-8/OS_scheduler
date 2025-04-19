@@ -19,9 +19,9 @@
         <Label style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;" text="Gantt Chart" />
         <ScrollPane fitToHeight="true" vbarPolicy="NEVER"
                     style="-fx-background: #2a2a3a; -fx-background-color: transparent;">
-            <Label fx:id="ganttChartLabel" minHeight="50"
-                   style="-fx-font-size: 16px; -fx-text-fill: white; -fx-background-color: #2a2a3a; -fx-padding: 10; -fx-border-color: #3a3a4a; -fx-border-radius: 5;"
-                   text="Gantt Chart will be drawn here"/>
+                <Label fx:id="ganttChartLabel" minHeight="50"
+                       style="-fx-font-size: 16px; -fx-text-fill: white; -fx-background-color: #2a2a3a; -fx-padding: 10; -fx-border-color: #3a3a4a; -fx-border-radius: 5;"
+                       text="Gantt Chart will be drawn here"/>
         </ScrollPane>
 
         <!-- Process Management Section -->
@@ -57,6 +57,12 @@
                     </style>
                 </TableColumn>
                 <TableColumn fx:id="priorityColumn" style="-fx-font-size: 14px;" text="Priority">
+                    <style>
+                        -fx-alignment: CENTER;
+                        -fx-text-fill: white;
+                    </style>
+                </TableColumn>
+                <TableColumn fx:id="BurstColumn" style="-fx-font-size: 14px;" text="Burst">
                     <style>
                         -fx-alignment: CENTER;
                         -fx-text-fill: white;
